@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemma AI - Chat Companion</title>
+    <!-- Google Fonts: Inter and Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Highlight.js for Code Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <!-- Marked.js for Markdown Parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fa-solid fa-wand-magic-sparkles logo-icon"></i>
+                    <span>Gemma Hub</span>
+                </div>
+                <button class="close-sidebar-btn" id="closeSidebarBtn">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <button class="new-chat-btn" id="newChatBtn">
+                <i class="fa-solid fa-plus"></i>
+                <span>New Chat</span>
+            </button>
+
+            <div class="sessions-list-wrapper">
+                <div class="sidebar-section-title">Recent Chats</div>
+                <ul class="sessions-list" id="sessionsList">
+                    <!-- Dynamic sessions load here -->
+                    <div class="sessions-skeleton">
+                        <div class="skeleton-item"></div>
+                        <div class="skeleton-item"></div>
+                        <div class="skeleton-item"></div>
+                    </div>
+                </ul>
+            </div>
+
+            <div class="sidebar-footer">
+                <button class="clear-cache-btn" id="clearCacheBtn">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>Clear Cache</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="chat-area">
+            <!-- Top Navbar -->
+            <header class="navbar">
+                <div class="navbar-left">
+                    <button class="toggle-sidebar-btn" id="toggleSidebarBtn">
+                        <i class="fa-solid fa-bars-staggered"></i>
+                    </button>
+                    <div class="session-info">
+                        <span class="session-label">Session:</span>
+                        <span class="session-id" id="activeSessionId">None</span>
+                    </div>
+                </div>
+                
+                <div class="navbar-right">
+                    <div class="model-selector-container">
+                        <i class="fa-solid fa-microchip select-icon"></i>
+                        <select id="modelSelect" class="model-select">
+                            <option value="gemma-4-31b-it">Gemma 4 31B (Default)</option>
+                            <option value="gemma-4-26b-a4b-it">Gemma 4 26B A4B</option>
+                        </select>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Conversation Display -->
+            <section class="messages-container" id="messagesContainer">
+                <!-- Welcome/Empty State Screen -->
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-header">
+                        <div class="welcome-logo">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </div>
+                        <h1>How can I help you today?</h1>
+                        <p class="welcome-subtitle">Ask anything. Gemma is ready to brainstorm, write code, or explain complex ideas.</p>
+                    </div>
+
+                    <div class="suggestions-grid">
+                        <div class="suggestion-card" data-prompt="Write a Python function to sort a list of numbers without using built-ins.">
+                            <div class="suggestion-icon"><i class="fa-brands fa-python"></i></div>
+                            <div class="suggestion-title">Write Python Code</div>
+                            <div class="suggestion-desc">Create a sorting function from scratch</div>
+                        </div>
+                        <div class="suggestion-card" data-prompt="Explain quantum computing in simple terms for a 10-year-old.">
+                            <div class="suggestion-icon"><i class="fa-solid fa-atom"></i></div>
+                            <div class="suggestion-title">Explain Concepts</div>
+                            <div class="suggestion-desc">Quantum computing for beginners</div>
+                        </div>
+                        <div class="suggestion-card" data-prompt="Draft a polite email to my manager requesting a 3-day extension on my project.">
+                            <div class="suggestion-icon"><i class="fa-regular fa-envelope"></i></div>
+                            <div class="suggestion-title">Draft an Email</div>
+                            <div class="suggestion-desc">Polite request for deadline extension</div>
+                        </div>
+                        <div class="suggestion-card" data-prompt="Help me brainstorm 5 unique brand names for a green energy startup.">
+                            <div class="suggestion-icon"><i class="fa-solid fa-lightbulb"></i></div>
+                            <div class="suggestion-title">Brainstorm Names</div>
+                            <div class="suggestion-desc">Green energy brand name ideas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat History Messages go here -->
+                <div class="chats-wrapper" id="chatsWrapper" style="display: none;"></div>
+
+                <!-- Typing / Generating Indicator -->
+                <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                    <div class="bot-avatar">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <div class="indicator-bubble">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bottom Chat Input Panel -->
+            <footer class="input-panel">
+                <div class="input-wrapper">
+                    <textarea id="chatInput" placeholder="Message Gemma..." rows="1"></textarea>
+                    <button id="sendBtn" class="send-btn" disabled>
+                        <i class="fa-solid fa-arrow-up"></i>
+                    </button>
+                </div>
+                <div class="disclaimer">
+                    Gemma may display inaccurate info, so double-check its responses.
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

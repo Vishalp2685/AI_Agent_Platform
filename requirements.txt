@@ -1,0 +1,10 @@
+fastapi[standard]
+sqlalchemy
+psycopg2
+google-genai
+redis
+httpx
+pgvector
+sentence-transformers
+langchain-text-splitters
+pymupdf
