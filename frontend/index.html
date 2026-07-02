@@ -26,12 +26,12 @@
                     <i class="fa-solid fa-wand-magic-sparkles logo-icon"></i>
                     <span>Gemma Hub</span>
                 </div>
-                <button class="close-sidebar-btn" id="closeSidebarBtn">
+                <button type="button" class="close-sidebar-btn" id="closeSidebarBtn">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             
-            <button class="new-chat-btn" id="newChatBtn">
+            <button type="button" class="new-chat-btn" id="newChatBtn">
                 <i class="fa-solid fa-plus"></i>
                 <span>New Chat</span>
             </button>
@@ -49,7 +49,7 @@
             </div>
 
             <div class="sidebar-footer">
-                <button class="clear-cache-btn" id="clearCacheBtn">
+                <button type="button" class="clear-cache-btn" id="clearCacheBtn">
                     <i class="fa-solid fa-trash-can"></i>
                     <span>Clear Cache</span>
                 </button>
@@ -61,7 +61,7 @@
             <!-- Top Navbar -->
             <header class="navbar">
                 <div class="navbar-left">
-                    <button class="toggle-sidebar-btn" id="toggleSidebarBtn">
+                    <button type="button" class="toggle-sidebar-btn" id="toggleSidebarBtn">
                         <i class="fa-solid fa-bars-staggered"></i>
                     </button>
                     <div class="session-info">
@@ -135,9 +135,26 @@
 
             <!-- Bottom Chat Input Panel -->
             <footer class="input-panel">
+                <!-- File Uploading Preview Container -->
+                <div class="upload-preview-container" id="uploadPreviewContainer" style="display: none;">
+                    <div class="upload-preview-card">
+                        <i class="fa-solid fa-file-pdf pdf-icon"></i>
+                        <div class="upload-preview-info">
+                            <span class="upload-preview-name" id="uploadPreviewName">filename.pdf</span>
+                            <span class="upload-preview-status" id="uploadPreviewStatus">Uploading...</span>
+                        </div>
+                        <button type="button" class="remove-upload-btn" id="removeUploadBtn" title="Remove attachment">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
                 <div class="input-wrapper">
+                    <button type="button" id="uploadBtn" class="upload-btn" title="Upload PDF Document">
+                        <i class="fa-solid fa-paperclip"></i>
+                    </button>
+                    <input type="file" id="fileInput" accept=".pdf" style="display: none;">
                     <textarea id="chatInput" placeholder="Message Gemma..." rows="1"></textarea>
-                    <button id="sendBtn" class="send-btn" disabled>
+                    <button type="button" id="sendBtn" class="send-btn" disabled>
                         <i class="fa-solid fa-arrow-up"></i>
                     </button>
                 </div>

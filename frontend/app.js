@@ -6,6 +6,7 @@ let activeSessionId = null;
 let sessionsList = [];
 let selectedModel = 'gemma-4-31b-it';
 let isLoading = false;
+let isUploading = false;
 
 // DOM Elements
 const sidebar = document.getElementById('sidebar');
@@ -23,6 +24,14 @@ const typingIndicator = document.getElementById('typingIndicator');
 const chatInput = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
 const suggestionCards = document.querySelectorAll('.suggestion-card');
+
+// Upload DOM Elements
+const uploadBtn = document.getElementById('uploadBtn');
+const fileInput = document.getElementById('fileInput');
+const uploadPreviewContainer = document.getElementById('uploadPreviewContainer');
+const uploadPreviewName = document.getElementById('uploadPreviewName');
+const uploadPreviewStatus = document.getElementById('uploadPreviewStatus');
+const removeUploadBtn = document.getElementById('removeUploadBtn');
 
 // Setup Marked.js Markdown Parsing with Highlight.js code rendering
 const renderer = new marked.Renderer();
@@ -126,6 +135,18 @@ function init() {
             submitMessage();
         });
     });
+
+    // Upload Button Click -> trigger hidden input
+    uploadBtn.addEventListener('click', () => {
+        if (isUploading) return;
+        fileInput.click();
+    });
+
+    // File Input Selection Change
+    fileInput.addEventListener('change', handleFileSelect);
+
+    // Remove Upload Preview Button Click
+    removeUploadBtn.addEventListener('click', removeAttachment);
 
     // Load initial data
     loadSessions(true);
@@ -232,6 +253,15 @@ async function startNewChat() {
 function setActiveSession(sessionId, isNew = false) {
     activeSessionId = sessionId;
     activeSessionIdEl.textContent = sessionId || 'None';
+    
+    // Reset document upload preview on session switch
+    if (uploadPreviewContainer) {
+        uploadPreviewContainer.style.display = 'none';
+    }
+    if (fileInput) {
+        fileInput.value = '';
+    }
+    isUploading = false;
     
     // Highlight active session item in sidebar
     document.querySelectorAll('.session-item').forEach(item => {
@@ -451,4 +481,99 @@ function escapeHTML(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+// Handle file selection and upload
+async function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate that it is a PDF file
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+        alert('Invalid file type. Only PDF files are allowed.');
+        fileInput.value = '';
+        return;
+    }
+
+    isUploading = true;
+    
+    // Disable inputs
+    chatInput.disabled = true;
+    sendBtn.disabled = true;
+    uploadBtn.disabled = true;
+
+    // Update upload preview UI
+    uploadPreviewName.textContent = file.name;
+    uploadPreviewStatus.textContent = 'Uploading...';
+    uploadPreviewStatus.className = 'upload-preview-status uploading';
+    removeUploadBtn.style.display = 'none';
+    uploadPreviewContainer.style.display = 'block';
+
+    try {
+        // Ensure a session exists
+        if (!activeSessionId) {
+            const sessionResponse = await fetch(`${API_BASE_URL}/chat/create_new_session`);
+            if (!sessionResponse.ok) throw new Error('Failed to create new chat session');
+            const newSessionId = await sessionResponse.json();
+            setActiveSession(newSessionId, true);
+        }
+
+        // Prepare request
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch(`${API_BASE_URL}/documents/upload/?session_id=${activeSessionId}`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.detail || 'Upload failed');
+        }
+
+        const data = await response.json();
+
+        // Show success status
+        uploadPreviewStatus.textContent = 'Ready';
+        uploadPreviewStatus.className = 'upload-preview-status ready';
+        
+        // Add confirm message in chat
+        if (welcomeScreen.style.display !== 'none') {
+            welcomeScreen.style.display = 'none';
+            chatsWrapper.style.display = 'flex';
+        }
+        
+        appendMessageToUI('model', `📎 **Document Uploaded**: *"${file.name}"*\n\nParsed and embedded successfully. Gemma is now equipped with its content. You can ask questions based on it.`, null, selectedModel);
+        scrollToBottom();
+
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        uploadPreviewStatus.textContent = 'Failed';
+        uploadPreviewStatus.className = 'upload-preview-status failed';
+        alert(`Failed to upload document: ${error.message}`);
+    } finally {
+        isUploading = false;
+        removeUploadBtn.style.display = 'flex';
+        
+        // Re-enable inputs
+        chatInput.disabled = false;
+        uploadBtn.disabled = false;
+        toggleSendButtonState();
+        chatInput.focus();
+        
+        // Reset file input value
+        fileInput.value = '';
+    }
+}
+
+// Remove document preview visually
+function removeAttachment() {
+    if (isUploading) return;
+    uploadPreviewContainer.style.display = 'none';
+    fileInput.value = '';
+    
+    // Notify user how context behaves
+    appendMessageToUI('model', `ℹ️ **Notice**: The document preview has been dismissed from the input panel. However, please note that any documents successfully parsed during this session remain embedded in the database context for this chat session until a **New Chat** is started or cache is cleared.`, null, selectedModel);
+    scrollToBottom();
 }

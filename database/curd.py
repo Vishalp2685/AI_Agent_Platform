@@ -7,15 +7,17 @@ from Utils.utils import format_chats
 
 def save_doc_data(data:Document):
     try:
-        with sl() as session:
-            session.add(Documents(
+        doc = Documents(
                 session_id=data.session_id,
                 file_name=data.file_name,
                 file_at=str(data.file_loc),
-            ))
+            )
+        with sl() as session:
+            session.add(doc)
             session.commit()
-            file_id = session.scalar(select(Documents.id).where(Documents.session_id == data.session_id,
-                                                      Documents.file_name == data.file_name))
+            file_id = doc.id
+            # file_id = session.scalar(select(Documents.id).where(Documents.session_id == data.session_id,
+            #                                           Documents.file_name == data.file_name))
         return {'status':True, 'comments':'Docs data saved to db','file_id':file_id}
     except Exception as e:
         print(f"[Error][curd.py(save_doc_data): {e}]")
@@ -94,3 +96,19 @@ def save_embeddings(vectors:list,document_id:int,chunks:list):
     except Exception as e:
         print(f"[Error][curd.py(save_embeddings)]: {e}")
         return {'status':False, 'comments': f"failed to save embeddings {e}"}
+    
+def search_relavent_chunks(query_vector:list[float],session_id:int,limit:int = 5):
+    with sl() as session:
+        distance = DocumentChunks.embeddings.cosine_distance(query_vector)
+
+        stmt = (
+            select(DocumentChunks.chunk_text)
+            .join(Documents, DocumentChunks.document_id == Documents.id)
+            .where(Documents.session_id == session_id)
+            .order_by(distance)
+            .limit(limit)
+        )
+        result = session.execute(stmt).all()
+        chunks = [chunk[0] for chunk in result]
+        return chunks
+            

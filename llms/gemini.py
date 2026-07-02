@@ -10,7 +10,7 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 client = genai.Client(api_key = GEMINI_API_KEY)
 
-async def   get_response_from_gemini(data,history = [])->dict:
+async def   get_response_from_gemini(data,doc_context:list[str],history = [])->dict:
     history = [
         types.Content(
             role=chat.role.value,
@@ -18,7 +18,7 @@ async def   get_response_from_gemini(data,history = [])->dict:
         )
         for chat in history
     ]
-    
+    data.user_message = f"Document Context: {doc_context} \n" + "User Message: " + data.user_message
     try:
         chat = client.chats.create(
         model = data.model_name,

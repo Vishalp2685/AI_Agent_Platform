@@ -10,5 +10,6 @@ List of tools to implement
 7. Http Request Tool
 8. Image understanding
 9. Text to speech and Speech to text
+10. Image understanding skill
 '''
 # for testing Only implement calculator and Http Request tool.

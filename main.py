@@ -2,10 +2,10 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 import asyncio
 from schemas import ModelResponse,ModelResponsePayload,Chats,Role,Document,DocsResponsePayload
 from database.curd import (is_session_id_present,save_message_to_db,get_all_chat_session_ids,
-                get_session_chats,save_session_id,save_doc_data,save_embeddings
+                get_session_chats,save_session_id,save_doc_data,save_embeddings,search_relavent_chunks
                 )
 from database.database import test_db_connection
-from Utils.utils import generate_session_id
+from Utils.utils import generate_random_string
 from llms.gemini import get_response_from_gemini
 from redis.asyncio import Redis
 from contextlib import asynccontextmanager
@@ -18,6 +18,7 @@ import os
 from rag.embeddings import embed
 from rag.extractor import extract_text_from_pdf
 from rag.chunker import create_chunks
+
 
 adapter = TypeAdapter(list[Chats])
 
@@ -34,9 +35,12 @@ redis = Redis(
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
-    await redis.ping()
-    print("Connected to redis...")
-
+    try:
+        await redis.ping()
+        print("Connected to redis...")
+    except Exception as e:
+        print("Failed to connect the redis server, check if the redis server is running on port 6379")
+        raise SystemExit(1)
     # Checking the db 
     print("Connecting to db.....")
     if test_db_connection:
@@ -74,9 +78,12 @@ async def get_response(data:ModelResponse):
     else: # else get the history form db
         chat_history = get_session_chats(data.chat_session_id)
     
+    user_message_vector = embed(data.user_message)
+    context = search_relavent_chunks(user_message_vector,data.chat_session_id)
+
     # save user message to db
     user,response_data = await asyncio.gather(save_message_to_db(data),
-                get_response_from_gemini(data,history=chat_history))
+                get_response_from_gemini(data,doc_context=context,history=chat_history))
     
     if user['status'] and response_data['status']:
         chat_history.extend([Chats(
@@ -107,7 +114,7 @@ async def get_response(data:ModelResponse):
 @app.get('/chat/create_new_session')
 async def create_new_session():
     while True:
-        session_id = generate_session_id()
+        session_id = generate_random_string()
         present = is_session_id_present(session_id)
         if not present:
             if save_session_id(session_id):
@@ -151,13 +158,14 @@ async def parse_document(session_id:str,file: Annotated[UploadFile, File(descrip
     if not is_session_id_present(session_id):
         raise HTTPException(status_code=400, detail='Invalid session_id')
 
-    safe_filename = os.path.basename(file.filename)
+    safe_filename = generate_random_string(length=16)
     dest_path = UPLOAD_DIR/safe_filename
 
     try:
         with open(dest_path, 'wb') as buffer:
             while chunk := await file.read(1024*1024):
                 buffer.write(chunk)
+
         metadata = Document(
         session_id=session_id,
         file_name=safe_filename,
@@ -167,7 +175,8 @@ async def parse_document(session_id:str,file: Annotated[UploadFile, File(descrip
         saved = save_doc_data(metadata)
         if not saved['status']:
             raise HTTPException(status_code=500, detail='Failed to save metadata in db')
-        
+        print(saved)
+        print("-------------------------------------------------") 
         # creating the vectors for thr text from the document.
         text = extract_text_from_pdf(file_path=dest_path)
        
@@ -192,3 +201,7 @@ async def parse_document(session_id:str,file: Annotated[UploadFile, File(descrip
         file_id = saved['file_id']
     )
 
+@app.get('/test/chat/')
+def test_chunks(message:str,session_id:str):
+    mess_vector = embed(message)
+    return search_relavent_chunks(mess_vector,session_id)

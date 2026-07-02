@@ -2,7 +2,7 @@ import random
 import string
 from schemas import Chats
 
-def generate_session_id(length = 12):
+def generate_random_string(length = 12):
     # Combines lowercase, uppercase, and digits (abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789)
     characters = string.ascii_letters + string.digits
 
