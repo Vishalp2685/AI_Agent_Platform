@@ -35,11 +35,11 @@ const removeUploadBtn = document.getElementById('removeUploadBtn');
 
 // Setup Marked.js Markdown Parsing with Highlight.js code rendering
 const renderer = new marked.Renderer();
-renderer.code = function(code, lang) {
+renderer.code = function (code, lang) {
     let codeText = typeof code === 'object' ? code.text : code;
     let language = typeof code === 'object' ? code.lang : lang;
     language = language || 'plaintext';
-    
+
     let highlighted;
     try {
         if (hljs.getLanguage(language)) {
@@ -50,7 +50,7 @@ renderer.code = function(code, lang) {
     } catch (e) {
         highlighted = codeText;
     }
-    
+
     return `<pre><div class="code-header">
         <span>${language}</span>
         <button class="copy-btn" onclick="copyCode(this)">
@@ -61,11 +61,11 @@ renderer.code = function(code, lang) {
 marked.setOptions({ renderer: renderer });
 
 // Global function to copy code blocks to clipboard
-window.copyCode = function(button) {
+window.copyCode = function (button) {
     const pre = button.closest('pre');
     const codeElement = pre.querySelector('code');
     const text = codeElement.innerText;
-    
+
     navigator.clipboard.writeText(text).then(() => {
         button.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
         button.style.color = 'hsl(140, 80%, 65%)';
@@ -86,7 +86,7 @@ function init() {
     toggleSidebarBtn.addEventListener('click', () => {
         sidebar.classList.toggle('open');
     });
-    
+
     closeSidebarBtn.addEventListener('click', () => {
         sidebar.classList.remove('open');
     });
@@ -169,7 +169,7 @@ async function loadSessions(selectFirst = false) {
     try {
         const response = await fetch(`${API_BASE_URL}/get_all_sessions/`);
         if (!response.ok) throw new Error('Failed to fetch sessions');
-        
+
         sessionsList = await response.json();
         renderSessionsList();
 
@@ -178,9 +178,6 @@ async function loadSessions(selectFirst = false) {
                 // Select the first session (or last created)
                 const targetSession = sessionsList[sessionsList.length - 1];
                 setActiveSession(targetSession);
-            } else {
-                // If there are no sessions, create a new one automatically
-                startNewChat();
             }
         }
     } catch (error) {
@@ -198,7 +195,7 @@ async function loadSessions(selectFirst = false) {
 // Render the loaded session IDs inside the sidebar
 function renderSessionsList() {
     sessionsListEl.innerHTML = '';
-    
+
     if (sessionsList.length === 0) {
         sessionsListEl.innerHTML = `
             <div style="padding: 12px; color: var(--text-muted); font-size: 0.8rem; text-align: center;">
@@ -210,7 +207,7 @@ function renderSessionsList() {
 
     // Sort or reverse to show newest first
     const listCopy = [...sessionsList].reverse();
-    
+
     listCopy.forEach(sessionId => {
         const li = document.createElement('li');
         li.className = `session-item ${sessionId === activeSessionId ? 'active' : ''}`;
@@ -219,7 +216,7 @@ function renderSessionsList() {
             <i class="fa-regular fa-comment-dots"></i>
             <span>${sessionId}</span>
         `;
-        
+
         li.addEventListener('click', () => {
             if (activeSessionId === sessionId) return;
             setActiveSession(sessionId);
@@ -228,7 +225,7 @@ function renderSessionsList() {
                 sidebar.classList.remove('open');
             }
         });
-        
+
         sessionsListEl.appendChild(li);
     });
 }
@@ -236,11 +233,11 @@ function renderSessionsList() {
 // Request backend to create a new session ID
 async function startNewChat() {
     if (isLoading) return;
-    
+
     try {
         const response = await fetch(`${API_BASE_URL}/chat/create_new_session`);
         if (!response.ok) throw new Error('Failed to create new session');
-        
+
         const newSessionId = await response.json();
         setActiveSession(newSessionId, true);
     } catch (error) {
@@ -253,7 +250,7 @@ async function startNewChat() {
 function setActiveSession(sessionId, isNew = false) {
     activeSessionId = sessionId;
     activeSessionIdEl.textContent = sessionId || 'None';
-    
+
     // Reset document upload preview on session switch
     if (uploadPreviewContainer) {
         uploadPreviewContainer.style.display = 'none';
@@ -262,7 +259,7 @@ function setActiveSession(sessionId, isNew = false) {
         fileInput.value = '';
     }
     isUploading = false;
-    
+
     // Highlight active session item in sidebar
     document.querySelectorAll('.session-item').forEach(item => {
         if (item.getAttribute('data-id') === sessionId) {
@@ -293,22 +290,22 @@ async function fetchChatsForSession(sessionId) {
     try {
         const response = await fetch(`${API_BASE_URL}/chat/get_chats/${sessionId}`);
         if (!response.ok) throw new Error('Failed to fetch chats');
-        
+
         const chats = await response.json();
-        
+
         chatsWrapper.innerHTML = '';
-        
+
         if (chats.length === 0) {
             chatsWrapper.style.display = 'none';
             welcomeScreen.style.display = 'flex';
         } else {
             welcomeScreen.style.display = 'none';
             chatsWrapper.style.display = 'flex';
-            
+
             chats.forEach(chat => {
                 appendMessageToUI(chat.role, chat.message, chat.sent_on, chat.model_used);
             });
-            
+
             scrollToBottom();
         }
     } catch (error) {
@@ -329,7 +326,7 @@ function appendMessageToUI(role, messageText, timeString = null, modelName = nul
     const isUser = role === 'user';
     const row = document.createElement('div');
     row.className = `message-row ${isUser ? 'user' : 'bot'}`;
-    
+
     // Format timestamp
     let formattedTime = '';
     if (timeString) {
@@ -344,10 +341,10 @@ function appendMessageToUI(role, messageText, timeString = null, modelName = nul
     }
 
     // Avatar HTML
-    const avatarHTML = isUser 
+    const avatarHTML = isUser
         ? `<div class="user-avatar"><i class="fa-regular fa-user"></i></div>`
         : `<div class="bot-avatar"><i class="fa-solid fa-wand-magic-sparkles"></i></div>`;
-        
+
     // Parse Markdown for assistant responses, plain text with escapes for user
     const contentHTML = isUser
         ? escapeHTML(messageText).replace(/\n/g, '<br>')
@@ -368,7 +365,7 @@ function appendMessageToUI(role, messageText, timeString = null, modelName = nul
             ${metaHTML}
         </div>
     `;
-    
+
     chatsWrapper.appendChild(row);
 }
 
@@ -381,17 +378,17 @@ async function submitMessage() {
     chatInput.value = '';
     adjustTextareaHeight();
     toggleSendButtonState();
-    
+
     // Hide welcome panel if visible
     if (welcomeScreen.style.display !== 'none') {
         welcomeScreen.style.display = 'none';
         chatsWrapper.style.display = 'flex';
     }
-    
+
     // Display user message in UI immediately
     appendMessageToUI('user', text);
     scrollToBottom();
-    
+
     // Display typing indicator
     typingIndicator.style.display = 'flex';
     scrollToBottom();
@@ -411,15 +408,15 @@ async function submitMessage() {
         });
 
         if (!response.ok) throw new Error('API request failed');
-        
+
         const payload = await response.json();
-        
+
         // Hide typing indicator
         typingIndicator.style.display = 'none';
-        
+
         if (payload.status && payload.model_answer) {
             appendMessageToUI('model', payload.model_answer, null, selectedModel);
-            
+
             // Check if current session needs to be added to sessions list (if it was brand new)
             if (!sessionsList.includes(activeSessionId)) {
                 await loadSessions(false);
@@ -442,11 +439,11 @@ async function submitMessage() {
 // Clear Redis cache and reset application state
 async function clearRedisCache() {
     if (!confirm('Are you sure you want to clear the entire session cache? This will reset all stored chats.')) return;
-    
+
     try {
         const response = await fetch(`${API_BASE_URL}/clear_redis`);
         if (!response.ok) throw new Error('Failed to clear cache');
-        
+
         const success = await response.json();
         if (success) {
             // Reset state
@@ -455,9 +452,9 @@ async function clearRedisCache() {
             chatsWrapper.innerHTML = '';
             chatsWrapper.style.display = 'none';
             welcomeScreen.style.display = 'flex';
-            
-            // Reload (which will trigger a clean new chat session)
-            await loadSessions(true);
+
+            // Refresh the sidebar without forcing a new session immediately.
+            await loadSessions(false);
         }
     } catch (error) {
         console.error('Error clearing redis cache:', error);
@@ -496,7 +493,7 @@ async function handleFileSelect(e) {
     }
 
     isUploading = true;
-    
+
     // Disable inputs
     chatInput.disabled = true;
     sendBtn.disabled = true;
@@ -537,13 +534,13 @@ async function handleFileSelect(e) {
         // Show success status
         uploadPreviewStatus.textContent = 'Ready';
         uploadPreviewStatus.className = 'upload-preview-status ready';
-        
+
         // Add confirm message in chat
         if (welcomeScreen.style.display !== 'none') {
             welcomeScreen.style.display = 'none';
             chatsWrapper.style.display = 'flex';
         }
-        
+
         appendMessageToUI('model', `📎 **Document Uploaded**: *"${file.name}"*\n\nParsed and embedded successfully. Gemma is now equipped with its content. You can ask questions based on it.`, null, selectedModel);
         scrollToBottom();
 
@@ -555,13 +552,13 @@ async function handleFileSelect(e) {
     } finally {
         isUploading = false;
         removeUploadBtn.style.display = 'flex';
-        
+
         // Re-enable inputs
         chatInput.disabled = false;
         uploadBtn.disabled = false;
         toggleSendButtonState();
         chatInput.focus();
-        
+
         // Reset file input value
         fileInput.value = '';
     }
@@ -572,7 +569,7 @@ function removeAttachment() {
     if (isUploading) return;
     uploadPreviewContainer.style.display = 'none';
     fileInput.value = '';
-    
+
     // Notify user how context behaves
     appendMessageToUI('model', `ℹ️ **Notice**: The document preview has been dismissed from the input panel. However, please note that any documents successfully parsed during this session remain embedded in the database context for this chat session until a **New Chat** is started or cache is cleared.`, null, selectedModel);
     scrollToBottom();

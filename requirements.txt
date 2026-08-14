@@ -8,3 +8,4 @@ pgvector
 sentence-transformers
 langchain-text-splitters
 pymupdf
+mcp

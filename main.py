@@ -18,7 +18,7 @@ import os
 from rag.embeddings import embed
 from rag.extractor import extract_text_from_pdf
 from rag.chunker import create_chunks
-
+from mcps import manager
 
 adapter = TypeAdapter(list[Chats])
 
@@ -43,12 +43,14 @@ async def lifespan(app:FastAPI):
         raise SystemExit(1)
     # Checking the db 
     print("Connecting to db.....")
-    if test_db_connection:
+    if test_db_connection():
         print("Connected to db")
     else:
         print("Failed to connect to db")
         raise SystemExit(1) 
-
+    # Initializing the mcps
+    await manager.initalize()
+    # print(manager)
     yield
     await redis.close()
 
@@ -99,7 +101,10 @@ async def get_response(data:ModelResponse):
             sent_on = datetime.now(timezone.utc)
         )])
         
-        await redis.set(f"chat:session:{data.chat_session_id}",adapter.dump_json(chat_history)) 
+        await redis.set(
+            f"chat:session:{data.chat_session_id}",adapter.dump_json(chat_history),
+            ex=86400
+            ) 
         return ModelResponsePayload(
             status=True,
             model_answer=response_data['response'],
@@ -131,7 +136,7 @@ async def get_sessions():
 async def get_chats(session_id):
     chats = get_session_chats(session_id)
     formated_chats = adapter.dump_json(chats)
-    await redis.set(f"chat:session:{session_id}",formated_chats)
+    await redis.set(f"chat:session:{session_id}",formated_chats,ex = 86400)
     return chats
 
 @app.get('/clear_redis')
@@ -205,3 +210,9 @@ async def parse_document(session_id:str,file: Annotated[UploadFile, File(descrip
 def test_chunks(message:str,session_id:str):
     mess_vector = embed(message)
     return search_relavent_chunks(mess_vector,session_id)
+
+
+@app.get('/list_tools')
+async def get_tools():
+    tools = await manager.list_tools()
+    return len(tools)

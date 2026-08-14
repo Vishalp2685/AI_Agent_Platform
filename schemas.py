@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from enum import Enum
 from datetime import datetime
-
+from typing import Any
 
 class Role(str,Enum):
     model = 'model'
@@ -10,6 +10,8 @@ class Role(str,Enum):
 class Models(str,Enum):
     gemma4_26B = 'gemma-4-26b-a4b-it'
     gemma4_31B = 'gemma-4-31b-it'
+    gemini_flash = 'gemini-2.5-flash'
+    gemini_3 = 'gemini-3.1-flash-lite'
 
 class ModelResponse(BaseModel):
     model_name: Models
@@ -56,3 +58,21 @@ class Embeddings(BaseModel):
     document_id: int
     embeddings: float
     chunk_text: str
+
+
+class ToolRequest(BaseModel):
+    tool_name: str
+    arguments: dict[str,Any]
+
+class ToolResponse(BaseModel):
+    status: bool
+    data: Any | None = None
+    error: str | None = None
+
+class ToolDefintion(BaseModel):
+    name: str
+    title: str|None
+    description: str
+    input_schema: dict
+    output_schema: dict
+    server_name: str

@@ -8,6 +8,7 @@ env/
 ENV/
 *.agent_platform
 
+
 .env
 .env.*
 !.env.example
@@ -44,3 +45,5 @@ checkpoints/
 uploads/
 temp/
 tmp/
+
+*workspace
